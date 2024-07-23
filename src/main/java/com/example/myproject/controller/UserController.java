@@ -67,16 +67,10 @@ public class UserController
         {
             System.out.println("GetUser is called, id: " + userId);
 
-            // Try to get user by id
-            UserEntity userEntity = userService.GetUserById(userId);
+            //null check
+            UserEntity userEntity = GetUserEntity(userId).getBody();
 
-            if(userEntity == null)
-            {
-                System.out.println("GetUser: User is null");
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-
-            return new ResponseEntity<>(userEntity, HttpStatus.OK);
+            return ResponseEntity.ok(userEntity);
         }
         catch(Exception e)
         {
@@ -92,14 +86,8 @@ public class UserController
         {
             System.out.println("CheckMoney is called");
 
-            // Try to get user by id
-            UserEntity userEntity = userService.GetUserById(userId);
-
-            if(userEntity == null)
-            {
-                System.out.println("CheckMoney: User is null");
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
+            //null check
+            UserEntity userEntity = GetUserEntity(userId).getBody();
 
             return ResponseEntity.ok(userEntity.getMoney());
         }
@@ -117,14 +105,8 @@ public class UserController
         {
             System.out.println("UpdateMoney is called");
 
-            // Try to get user by id
-            UserEntity userEntity = userService.GetUserById(transactionDto.getUserId());
-
-            if(userEntity == null)
-            {
-                System.out.println("UpdateMoney: User is null");
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
+            //null check
+            UserEntity userEntity = GetUserEntity(transactionDto.getUserId()).getBody();
 
             return ResponseEntity.ok(userService.UpdateUser(transactionDto));
         }
@@ -133,5 +115,19 @@ public class UserController
             System.out.println("UpdateMoney: " + e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private ResponseEntity<UserEntity> GetUserEntity(int userId)
+    {
+        UserEntity userEntity = userService.GetUserById(userId);
+
+        if(userEntity == null)
+        {
+            System.out.println("User not found, id: " + userId);
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body("anan");
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        return ResponseEntity.ok(userEntity);
     }
 }
