@@ -1,6 +1,7 @@
 package com.example.myproject.controller;
 
 import com.example.myproject.dto.TransactionDto;
+import com.example.myproject.dto.UserDto;
 import com.example.myproject.entity.UserEntity;
 import com.example.myproject.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @RestController
 @RequestMapping(path = "/api/")
@@ -19,14 +19,14 @@ public class UserController
     private UserService userService;
 
     @PostMapping(path = "user/add")
-    public ResponseEntity<UserEntity> AddUser(@RequestBody UserEntity userEntity)
+    public ResponseEntity<UserEntity> AddUser(@RequestBody UserDto userDto)
     {
         try
         {
             System.out.println("AddUser is called");
 
             // Get name
-            String name = userEntity.getName();
+            String name = userDto.getName();
 
             if(name == null || name.isEmpty())
             {
@@ -35,7 +35,7 @@ public class UserController
             }
 
             //Get money
-            int money = userEntity.getMoney();
+            int money = userDto.getMoney();
 
             if(money < 0)
             {
@@ -43,9 +43,7 @@ public class UserController
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
 
-            UserEntity entity = userService.Create(userEntity);
-
-            // If the user is found, return it with a 200 OK status
+            UserEntity entity = userService.CreateUser(userDto);
             return ResponseEntity.ok(entity);
         }
         catch(Exception e)
@@ -53,6 +51,13 @@ public class UserController
             System.out.println("AddUser: " + e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping(path = "users")
+    public ResponseEntity<List<UserEntity>> GetAllUsers()
+    {
+        System.out.println("GetAllUsers is called");
+        return ResponseEntity.ok(userService.GetAllUsers());
     }
 
     @GetMapping(path = "user/{userId}")
@@ -63,15 +68,15 @@ public class UserController
             System.out.println("GetUser is called, id: " + userId);
 
             // Try to get user by id
-            UserEntity user = userService.GetUserById(userId);
+            UserEntity userEntity = userService.GetUserById(userId);
 
-            if(user == null)
+            if(userEntity == null)
             {
                 System.out.println("GetUser: User is null");
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            return new ResponseEntity<>(user, HttpStatus.OK);
+            return new ResponseEntity<>(userEntity, HttpStatus.OK);
         }
         catch(Exception e)
         {
@@ -80,31 +85,53 @@ public class UserController
         }
     }
 
-    @GetMapping(path = "users")
-    public ResponseEntity<List<UserEntity>> GetAllUsers()
+    @GetMapping(path = "money/check/{userId}")
+    public ResponseEntity<Integer> CheckMoney(@PathVariable("userId") int userId)
     {
-        System.out.println("get all users");
-        return ResponseEntity.ok(userService.GetAllUsers());
+        try
+        {
+            System.out.println("CheckMoney is called");
+
+            // Try to get user by id
+            UserEntity userEntity = userService.GetUserById(userId);
+
+            if(userEntity == null)
+            {
+                System.out.println("CheckMoney: User is null");
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            return ResponseEntity.ok(userEntity.getMoney());
+        }
+        catch(Exception e)
+        {
+            System.out.println("CheckMoney: " + e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @GetMapping(path = "check-money/{userId}")
-    public String CheckMoney(@PathVariable("userId") int userId)
+    @PostMapping(path = "money/update")
+    public ResponseEntity<UserEntity> UpdateMoney(@RequestBody TransactionDto transactionDto)
     {
-        System.out.println("CheckMoney id: " + userId);
-        return String.valueOf(userService.GetUserById(userId).getMoney());
-    }
+        try
+        {
+            System.out.println("UpdateMoney is called");
 
-    @PutMapping(path = "add-money")
-    public UserEntity AddMoney(@RequestBody UserEntity user)
-    {
-        System.out.println("AddMoney id: " + user.getId());
-        return userService.Update(user);
-    }
+            // Try to get user by id
+            UserEntity userEntity = userService.GetUserById(transactionDto.getUserId());
 
-    @PutMapping(path = "withdraw-money/{userId}")
-    public UserEntity WithdrawMoney(@PathVariable("userId") int userId)
-    {
-        System.out.println("WithdrawMoney id: " + userId);
-        return userService.Test(userId);
+            if(userEntity == null)
+            {
+                System.out.println("UpdateMoney: User is null");
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            return ResponseEntity.ok(userService.UpdateUser(transactionDto));
+        }
+        catch(Exception e)
+        {
+            System.out.println("UpdateMoney: " + e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
